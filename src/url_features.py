@@ -1,6 +1,8 @@
 
 from urllib.parse import urlsplit
 import ipaddress
+import math
+from collections import Counter
 
 
 def extract_features(url):
@@ -12,7 +14,13 @@ def extract_features(url):
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
+    # Parse the URL
     parsed_url = urlsplit(url)
+
+    # Normalize URLs with an empty path
+    if parsed_url.scheme in ("http", "https") and not parsed_url.path:
+        parsed_url = parsed_url._replace(path="/")
+        url = parsed_url.geturl()
 
     domain = parsed_url.hostname or ""
     domain = domain.lower()
@@ -22,6 +30,18 @@ def extract_features(url):
 
     # Count subdomains using our own consistent definition
     no_of_subdomain = max(len(domain_parts) - 2, 0)
+
+    # Calculate domain name entropy
+    domain_name = domain_parts[-2] if len(domain_parts) >= 2 else domain
+
+    char_counts = Counter(domain_name)
+    domain_entropy = 0
+
+    if domain_name:
+        domain_entropy = -sum(
+            (count / len(domain_name)) * math.log2(count / len(domain_name))
+            for count in char_counts.values()
+        )
 
     # URL and domain lengths
     url_length = len(url)
@@ -102,5 +122,6 @@ def extract_features(url):
         "NoOfAmpersandInURL": no_of_ampersand,
         "NoOfOtherSpecialCharsInURL": no_of_other_special,
         "SpacialCharRatioInURL": special_ratio,
-        "IsHTTPS": is_https
+        "IsHTTPS": is_https,
+        "DomainNameEntropy": domain_entropy
     }

@@ -15,11 +15,11 @@ st.set_page_config(
 )
 
 
-# ---------------- LOAD MODEL ----------------
+# ---------------- LOAD FINAL WEIGHTED MODEL ----------------
 
 @st.cache_resource
 def load_model():
-    return joblib.load("models/phishing_url_model.pkl")
+    return joblib.load("models/phishing_url_model_weighted.pkl")
 
 
 model = load_model()
@@ -106,8 +106,17 @@ if page == "Dashboard":
                 # Extract URL features
                 features = extract_features(url)
 
-                # Prepare input
+                # Arrange features in the exact order expected by the model
                 input_data = pd.DataFrame([features])
+                input_data = input_data.reindex(
+                    columns=model.feature_names_in_
+                )
+
+                # Check that all required features are available
+                if input_data.isnull().any().any():
+                    raise ValueError(
+                        "Some required URL features could not be extracted."
+                    )
 
                 # Model prediction
                 prediction = model.predict(input_data)[0]
@@ -129,15 +138,16 @@ if page == "Dashboard":
                     result = "Legitimate"
                     st.success("✅ URL Classified as Legitimate")
 
-                # Display confidence
+                # Display model confidence
                 st.metric(
-                    "Prediction Confidence",
+                    "Model Vote Confidence",
                     f"{confidence * 100:.2f}%"
                 )
 
                 st.caption(
-                    "This is an automated prediction, not a guarantee "
-                    "that the website is safe."
+                    "This is a machine learning prediction, not a guarantee "
+                    "that the website is safe. Confidence is not a verified "
+                    "probability of website safety."
                 )
 
                 # Save history
@@ -227,14 +237,16 @@ elif page == "About Project":
     st.subheader("Machine Learning Model")
 
     st.write("""
-    The system uses a Random Forest Classifier trained on
-    18 features extracted directly from URLs.
+    The system uses a Weighted Random Forest Classifier trained
+    using 19 features extracted directly from URLs.
     """)
 
-    st.subheader("Dataset")
+    st.subheader("Datasets")
 
-    st.write("""
-    PhiUSIIL Phishing URL Dataset
+    st.markdown("""
+    - PhiUSIIL Phishing URL Dataset
+    - LegitPhish Dataset
+    - Phish360 Dataset
     """)
 
     st.subheader("Project Purpose")
@@ -244,6 +256,11 @@ elif page == "About Project":
     learning can help identify potentially suspicious URLs.
     """)
 
+    st.info(
+        "PhishGuard AI provides automated predictions. "
+        "It does not guarantee that a website is safe or malicious."
+    )
+
 
 # ---------------- FOOTER ----------------
 
@@ -251,5 +268,5 @@ st.markdown("---")
 
 st.caption(
     "PhishGuard AI | AI-Powered Phishing Detection System | "
-    "Random Forest Classifier"
+    "Weighted Random Forest Classifier"
 )

@@ -1,10 +1,18 @@
 
 __pycache__/
 *.py[cod]
+
 venv/
 dataset/
+
 .env
 .streamlit/secrets.toml
-models/phishing_model.pkl
+
 .DS_Store
 Thumbs.db
+
+# Ignore experimental models
+models/*.pkl
+
+# Include the selected final model
+!models/phishing_url_model_weighted.pkl

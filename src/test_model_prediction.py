@@ -5,34 +5,54 @@ import joblib
 from url_features import extract_features
 
 
-# Load our newly trained model
+# Load the latest 19-feature model
 model = joblib.load("models/phishing_url_model.pkl")
 
-print("\n========== PHISHING URL DETECTOR ==========")
+# Test URLs
+test_urls = [
+    # Popular legitimate websites
+    "https://www.google.com",
+    "https://www.microsoft.com",
+    "https://www.flipkart.com",
+    "https://www.amazon.in",
+    "https://www.youtube.com",
+    "https://www.wikipedia.org",
+    "https://www.github.com",
+    "https://www.apple.com",
+    "https://www.netflix.com",
+    "https://www.linkedin.com",
 
-# Ask the user for a URL
-url = input("\nEnter a URL to check: ")
+    # Different URL structures
+    "https://www.flipkart.com/",
+    "https://www.flipkart.com/search?q=mobile",
+    "https://www.amazon.in/s?k=laptop",
+    "https://github.com/login",
 
-# Extract the 18 features
-features = extract_features(url)
+    # Suspicious-looking test examples (synthetic)
+    "http://secure-login-verification-account.xyz/login",
+    "http://account-update-confirmation.example/login",
+    "http://verify-bank-security.example/account",
+    "https://www.djchhduff.com"
+]
 
-# Convert features into a DataFrame
-input_data = pd.DataFrame([features])
+print("\n========== PHISHGUARD AI - BROAD TESTING ==========")
 
-# Make prediction
-prediction = model.predict(input_data)[0]
+for url in test_urls:
 
-# Get prediction confidence
-probabilities = model.predict_proba(input_data)[0]
-confidence = probabilities[list(model.classes_).index(prediction)]
+    features = extract_features(url)
+    input_data = pd.DataFrame([features])
 
-print("\n========== SCAN RESULT ==========")
+    prediction = model.predict(input_data)[0]
 
-if prediction == 0:
-    print("Result: PHISHING URL")
-else:
-    print("Result: LEGITIMATE URL")
+    probabilities = model.predict_proba(input_data)[0]
+    confidence = probabilities[list(model.classes_).index(prediction)]
 
-print("Confidence:", round(confidence * 100, 2), "%")
+    result = "POTENTIAL PHISHING" if prediction == 0 else "LEGITIMATE"
 
-print("\nScan completed!")
+    print("\n----------------------------------------")
+    print("URL:", url)
+    print("Prediction:", result)
+    print("Model confidence:", round(confidence * 100, 2), "%")
+    print("Domain entropy:", round(features["DomainNameEntropy"], 4))
+
+print("\n========== TESTING COMPLETED ==========")

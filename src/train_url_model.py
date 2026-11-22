@@ -20,7 +20,7 @@ print("Total records:", len(df))
 
 print("\n========== EXTRACTING URL FEATURES ==========")
 
-# Extract our own 18 features from every URL
+# Extract our own 19 features from every URL
 features_list = []
 
 for index, url in enumerate(df["URL"]):
