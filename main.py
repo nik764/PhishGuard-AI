@@ -106,16 +106,46 @@ if page == "Dashboard":
                 # Extract URL features
                 features = extract_features(url)
 
-                # Arrange features in the exact order expected by the model
-                input_data = pd.DataFrame([features])
-                input_data = input_data.reindex(
-                    columns=model.feature_names_in_
-                )
+                # Get exact feature names expected by the model
+                expected_features = list(model.feature_names_in_)
 
-                # Check that all required features are available
-                if input_data.isnull().any().any():
+                # Check for missing feature names
+                missing_features = [
+                    feature for feature in expected_features
+                    if feature not in features
+                ]
+
+                if missing_features:
                     raise ValueError(
-                        "Some required URL features could not be extracted."
+                        f"Missing feature names: {missing_features}"
+                    )
+
+                # Build input in the exact model feature order
+                input_data = pd.DataFrame([
+                    {
+                        feature: features[feature]
+                        for feature in expected_features
+                    }
+                ])
+
+                # Check for missing feature values
+                if input_data.isnull().any().any():
+
+                    missing_values = input_data.columns[
+                        input_data.isnull().any()
+                    ].tolist()
+
+                    raise ValueError(
+                        f"Missing feature values: {missing_values}"
+                    )
+
+                # Check that all values are numeric
+                if not all(
+                    pd.api.types.is_numeric_dtype(dtype)
+                    for dtype in input_data.dtypes
+                ):
+                    raise ValueError(
+                        "Some extracted features are not numeric."
                     )
 
                 # Model prediction
@@ -170,7 +200,7 @@ if page == "Dashboard":
 
                     st.dataframe(
                         feature_df,
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True
                     )
 
@@ -195,7 +225,7 @@ elif page == "Scan History":
 
         st.dataframe(
             history_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )
 
